@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MediaDash">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 <header>
@@ -31,7 +31,7 @@
 <div id="results" class="cards"></div>
 <main>
   <section data-section="downloads">
-    <h2>Downloads <span class="count" id="qb-count"></span></h2>
+    <h2>Downloads <span class="count" id="qb-count"></span><button id="pause-all" class="action small h2-btn" hidden>Pause all</button></h2>
     <div id="torrents" class="cards"><p class="empty">Loading…</p></div>
   </section>
   <section data-section="sonarr">
@@ -47,6 +47,6 @@
   <button id="refresh">⟳ Refresh</button>
   <span id="updated"></span>
 </footer>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

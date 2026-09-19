@@ -133,6 +133,9 @@ button.action {
   transition: transform .12s ease, filter .12s ease;
 }
 button.action:active { transform: scale(.96); filter: brightness(1.1); }
+button.action.small { padding: 6px 14px; font-size: .78rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(47, 109, 246, .35); }
+.h2-btn { margin-left: auto; }
+#pause-all[hidden] { display: none; }
 button.action.paused {
   background: linear-gradient(180deg, #3dd68c, #2ba866);
   box-shadow: 0 4px 14px rgba(52, 199, 123, .35);

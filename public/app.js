@@ -22,6 +22,25 @@ async function toggleTorrent(hash, action) {
   } catch (e) { console.error(e); }
 }
 
+async function toggleAllTorrents(action) {
+  try {
+    await fetch(`/api/torrents/all/${action}`, { method: 'POST' });
+    load();
+  } catch (e) { console.error(e); }
+}
+
+function updatePauseAll(torrents) {
+  const btn = $('pause-all');
+  if (!torrents.length) { btn.hidden = true; return; }
+  const PAUSED = ['pausedDL', 'pausedUP', 'stoppedDL', 'stoppedUP'];
+  const DONE = ['uploading', 'stalledUP', 'seeding', 'queuedUP'];
+  const anyActive = torrents.some(t => !PAUSED.includes(t.state) && !DONE.includes(t.state));
+  btn.hidden = false;
+  btn.textContent = anyActive ? 'Pause all' : 'Resume all';
+  btn.classList.toggle('paused', !anyActive);
+  btn.onclick = (e) => { e.stopPropagation(); toggleAllTorrents(anyActive ? 'pause' : 'resume'); };
+}
+
 function torrentCard(t) {
   const pct = (t.progress * 100).toFixed(1);
   const paused = ['pausedDL', 'pausedUP', 'stoppedDL', 'stoppedUP'].includes(t.state);
@@ -94,8 +113,10 @@ async function load() {
       $('torrents').innerHTML = list.length
         ? list.map(torrentCard).join('')
         : '<p class="empty">Nothing downloading.</p>';
+      updatePauseAll(torrents);
     } else {
       $('torrents').innerHTML = '<p class="empty">qBittorrent unreachable.</p>';
+      $('pause-all').hidden = true;
     }
 
     // Sonarr

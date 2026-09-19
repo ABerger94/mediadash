@@ -76,6 +76,7 @@ h2 {
   padding: 14px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
   animation: rise .35s ease both;
+  position: relative; overflow: hidden;
 }
 @keyframes rise {
   from { opacity: 0; transform: translateY(8px); }
@@ -195,3 +196,33 @@ section h2::after {
 section.collapsed h2::after { transform: rotate(-90deg); }
 section .cards { overflow: hidden; }
 section.collapsed .cards { display: none; }
+
+/* State accent bar on cards */
+.card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--accent); opacity: .9;
+}
+.card.st-active::before { background: linear-gradient(180deg, #2f6df6, #7ab3ff); }
+.card.st-paused::before { background: var(--faint); }
+.card.st-error::before { background: var(--red); }
+.card.st-done::before { background: var(--green); }
+
+/* Shimmer sweep on actively-downloading progress bars */
+.card.st-active .bar > div { position: relative; overflow: hidden; }
+.card.st-active .bar > div::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .35), transparent);
+  animation: shimmer 2.2s infinite;
+}
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* Entrance animation only on first paint — not on every 5s refresh */
+body.ready main .card { animation: none; }
+
+/* Queue cards: poster + info side by side */
+.card.queue { display: flex; gap: 14px; align-items: flex-start; }
+.card.queue .thumb {
+  width: 56px; height: 84px; object-fit: cover; border-radius: 10px; flex-shrink: 0;
+  background: var(--bg-soft); box-shadow: 0 4px 12px rgba(0, 0, 0, .4);
+}
+.card.queue .qbody { flex: 1; min-width: 0; }

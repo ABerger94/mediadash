@@ -94,7 +94,12 @@ app.get('/api/status', async (req, res) => {
     );
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const q = await r.json();
-    out.sonarr = { queue: q.records || [] };
+    out.sonarr = {
+      queue: (q.records || []).map(rec => ({
+        ...rec,
+        poster: rec.seriesId ? `/api/poster/sonarr/${rec.seriesId}` : null,
+      })),
+    };
   } catch (e) { out.errors.push('Sonarr: ' + e.message); }
 
   try {
@@ -104,7 +109,12 @@ app.get('/api/status', async (req, res) => {
     );
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const q = await r.json();
-    out.radarr = { queue: q.records || [] };
+    out.radarr = {
+      queue: (q.records || []).map(rec => ({
+        ...rec,
+        poster: rec.movieId ? `/api/poster/radarr/${rec.movieId}` : null,
+      })),
+    };
   } catch (e) { out.errors.push('Radarr: ' + e.message); }
 
   res.json(out);
@@ -123,6 +133,43 @@ app.post('/api/torrents/:hash/:action', async (req, res) => {
     res.json({ ok: r.ok });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ---- Poster proxy (queue cards show artwork; API keys stay server-side) ----
+const posterCache = new Map();
+async function resolvePoster(source, id) {
+  const key = `${source}:${id}`;
+  if (posterCache.has(key)) return posterCache.get(key);
+  const cfg = source === 'sonarr' ? config.sonarr : config.radarr;
+  const itemPath = source === 'sonarr' ? `/api/v3/series/${id}` : `/api/v3/movie/${id}`;
+  const r = await fetch(cfg.url + itemPath, { headers: { 'X-Api-Key': cfg.apiKey } });
+  if (!r.ok) return null;
+  const item = await r.json();
+  const p = (item.images || []).find(i => i.coverType === 'poster');
+  if (!p) return null;
+  // Prefer the local MediaCover file (fast); fall back to the remote artwork URL.
+  const url = p.url && p.url.startsWith('/')
+    ? `${cfg.url}${p.url}?apikey=${cfg.apiKey}`
+    : (p.remoteUrl || null);
+  if (!url) return null;
+  posterCache.set(key, url);
+  return url;
+}
+
+app.get('/api/poster/:source/:id', async (req, res) => {
+  const { source, id } = req.params;
+  if (!['sonarr', 'radarr'].includes(source) || !/^\d+$/.test(id)) return res.sendStatus(400);
+  try {
+    const url = await resolvePoster(source, id);
+    if (!url) return res.sendStatus(404);
+    const r = await fetch(url);
+    if (!r.ok) return res.sendStatus(502);
+    res.set('Content-Type', r.headers.get('content-type') || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(Buffer.from(await r.arrayBuffer()));
+  } catch (e) {
+    res.sendStatus(502);
   }
 });
 

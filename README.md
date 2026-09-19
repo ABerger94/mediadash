@@ -43,7 +43,8 @@ powershell -ExecutionPolicy Bypass -File install-task.ps1
 
 This registers MediaDash as a Windows background task: it starts automatically at
 boot, restarts itself if it crashes, and runs with no console window. Verify it's
-running at http://localhost:3000. To remove it later: `Unregister-ScheduledTask -TaskName MediaDash`.
+running at http://localhost:3000. To remove it later: Win+R → `shell:startup` →
+delete `MediaDash.lnk`.
 
 ## Remote access via Vercel (check downloads away from home)
 

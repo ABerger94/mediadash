@@ -48,7 +48,8 @@ header {
   -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--card-border);
 }
-.brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; }
+.brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.brand-icon { color: var(--accent); flex: none; }
 .speeds {
   font-variant-numeric: tabular-nums; color: var(--accent);
   font-size: .9rem; font-weight: 600;

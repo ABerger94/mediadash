@@ -1,0 +1,1 @@
+{"$schema":"https://openapi.vercel.sh/vercel.json","outputDirectory":"public","rewrites":[{"destination":"https://YOUR-TUNNEL-URL-HERE/api/:path*","source":"/api/:path*"}]}

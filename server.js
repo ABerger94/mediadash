@@ -126,24 +126,6 @@ app.post('/api/torrents/:hash/:action', async (req, res) => {
   }
 });
 
-// ---- Add a torrent to qBittorrent by magnet link or URL ----
-app.post('/api/torrents/add', async (req, res) => {
-  const urls = String(req.body.urls || '').trim();
-  if (!urls) return res.status(400).json({ ok: false, error: 'No link provided' });
-  try {
-    const r = await qbFetch('/api/v2/torrents/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ urls }),
-    });
-    // 409 = already in the client (qBittorrent 5.2+); treat as a no-op success.
-    if (!r.ok && r.status !== 409) throw new Error('HTTP ' + r.status);
-    res.json({ ok: true, duplicate: r.status === 409 });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
 // ---- Search across Sonarr / Radarr ----
 function pickPoster(images) {
   const p = (images || []).find(i => i.coverType === 'poster');

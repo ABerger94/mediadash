@@ -74,6 +74,41 @@ Notes:
   share the link.
 - Local WiFi access (`http://<laptop-ip>:3000`) keeps working exactly as before.
 
+## Library tab — browse and watch your downloads, no Plex needed
+
+The **Library** tab scans your finished media folders and lets you browse
+movies and TV shows (Show → Season → Episode) and stream them straight to
+your phone's browser.
+
+Add your media folders to `config.json` (defaults to `E:/media/tv` if omitted):
+
+```json
+"mediaDirs": ["E:/media/tv", "E:/media/movies"]
+```
+
+A folder whose name contains tv / shows / series / anime is treated as TV;
+movies / films / cinema (or anything else) is treated as movies. To be
+explicit, use objects instead:
+
+```json
+"mediaDirs": [
+  { "path": "E:/media/tv", "type": "tv" },
+  { "path": "E:/media/movies", "type": "movie" }
+]
+```
+
+How it works:
+
+- MP4 / M4V / MOV files get a **Play** button — they stream in the browser
+  with full seeking (HTTP Range support) and play natively in Safari.
+- Anything else (MKV, AVI, WEBM, …) shows a **"won't play in Safari"** note
+  with a **Download** link instead — save it to your phone and open it in a
+  player app like VLC or Infuse. No transcoding yet (see below).
+- Every library and stream route sits behind the same dashboard password.
+
+Future ideas (not in this pass): on-the-fly transcoding to MP4 for MKV files,
+posters/artwork for library items, watched-state tracking.
+
 ## Notes
 
 - `config.json` holds passwords and API keys — it is gitignored and never committed.

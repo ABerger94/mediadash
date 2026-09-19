@@ -146,7 +146,7 @@ async function load() {
   }
 }
 
-$('refresh').onclick = load;
+$('refresh').onclick = () => { currentView === 'library' ? loadLibrary(true) : load(); };
 $('go').onclick = doSearch;
 $('q').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 $('tab-series').onclick = () => setTab('series');
@@ -232,3 +232,97 @@ async function addItem(type, id, btn) {
     alert('Add failed: ' + e.message);
   }
 }
+
+// ---- View tabs: Dashboard / Library ----
+let currentView = 'dashboard';
+function switchView(v) {
+  currentView = v;
+  $('viewbtn-dashboard').classList.toggle('on', v === 'dashboard');
+  $('viewbtn-library').classList.toggle('on', v === 'library');
+  $('view-dashboard').hidden = v !== 'dashboard';
+  $('view-library').hidden = v !== 'library';
+  if (v === 'library') loadLibrary();
+}
+$('viewbtn-dashboard').onclick = () => switchView('dashboard');
+$('viewbtn-library').onclick = () => switchView('library');
+
+// ---- Personal library (no Plex) ----
+const libTitles = {};
+function libFileRow(f) {
+  libTitles[f.id] = f.label ? f.label + ' - ' + f.name : f.name;
+  const meta = `${fmtBytes(f.size)} · ${f.ext.replace('.', '').toUpperCase()}`;
+  if (f.playable) {
+    return `<div class="lib-row">
+      <div class="lib-info">
+        <div class="lib-name">${esc(f.label ? f.label + ' — ' + f.name : f.name)}</div>
+        <div class="lib-meta">${meta}</div>
+      </div>
+      <button class="action small" onclick="playFile(${f.id})">Play</button>
+    </div>`;
+  }
+  return `<div class="lib-row">
+    <div class="lib-info">
+      <div class="lib-name">${esc(f.label ? f.label + ' — ' + f.name : f.name)}</div>
+      <div class="lib-meta">${meta} · <span class="noplay">won't play in Safari</span></div>
+    </div>
+    <a class="action small dlink" href="/api/stream/${f.id}?download=1">Download</a>
+  </div>`;
+}
+
+function libShowCard(show) {
+  const epCount = show.seasons.reduce((n, s) => n + s.episodes.length, 0);
+  const seasons = show.seasons.map(s => `
+    <div class="season-group">
+      <div class="season-label">${esc(s.label)}</div>
+      ${s.episodes.map(libFileRow).join('')}
+    </div>`).join('');
+  return `<div class="card lib-show collapsed">
+    <div class="name lib-show-head" onclick="this.parentElement.classList.toggle('collapsed')">${esc(show.name)}<span class="badge">${epCount} ep</span></div>
+    <div class="lib-eps">${seasons}</div>
+  </div>`;
+}
+
+function libMovieCard(movie) {
+  return `<div class="card">
+    <div class="name">${esc(movie.name)}<span class="badge">${movie.files.length > 1 ? movie.files.length + ' files' : movie.files[0].ext.replace('.', '').toUpperCase()}</span></div>
+    ${movie.files.map(libFileRow).join('')}
+  </div>`;
+}
+
+async function loadLibrary(fresh) {
+  const mv = $('lib-movies'), tv = $('lib-tv');
+  mv.innerHTML = '<p class="empty">Loading…</p>';
+  tv.innerHTML = '<p class="empty">Loading…</p>';
+  try {
+    const res = await fetch('/api/library' + (fresh ? '?fresh=1' : ''));
+    if (res.status === 401) { document.body.innerHTML = '<p style="padding:20px">Login required.</p>'; return; }
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    $('lib-movie-count').textContent = `(${d.movies.length})`;
+    $('lib-tv-count').textContent = `(${d.tv.length})`;
+    mv.innerHTML = d.movies.length ? d.movies.map(libMovieCard).join('') : '<p class="empty">No movies found.</p>';
+    tv.innerHTML = d.tv.length ? d.tv.map(libShowCard).join('') : '<p class="empty">No shows found.</p>';
+    $('updated').textContent = 'Library: ' + d.totalFiles + ' files · updated ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    const msg = `<p class="empty">Library failed: ${esc(e.message)}</p>`;
+    mv.innerHTML = msg; tv.innerHTML = msg;
+  }
+}
+
+// ---- In-browser player ----
+function playFile(id) {
+  const v = $('player');
+  v.src = '/api/stream/' + id;
+  $('player-title').textContent = libTitles[id] || 'Playing';
+  $('player-overlay').hidden = false;
+  v.play().catch(() => {});
+}
+function closePlayer() {
+  const v = $('player');
+  v.pause();
+  v.removeAttribute('src');
+  v.load();
+  $('player-overlay').hidden = true;
+}
+$('player-close').onclick = closePlayer;
+$('player-overlay').addEventListener('click', e => { if (e.target.id === 'player-overlay') closePlayer(); });

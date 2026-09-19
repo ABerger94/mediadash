@@ -10,14 +10,19 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MediaDash">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 <header>
   <div class="brand"><svg class="brand-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg> MediaDash</div>
   <div class="speeds"><span id="dl">–</span> ↓ <span id="up">–</span> ↑</div>
 </header>
+<nav class="viewtabs">
+  <button id="viewbtn-dashboard" class="on">Dashboard</button>
+  <button id="viewbtn-library">Library</button>
+</nav>
 <div id="errors"></div>
+<div id="view-dashboard">
 <div class="searchbar">
   <div class="toggle">
     <button id="tab-series" class="on">TV</button>
@@ -43,10 +48,32 @@
     <div id="radarr" class="cards"><p class="empty">Loading…</p></div>
   </section>
 </main>
+</div>
+<div id="view-library" hidden>
+  <main>
+    <section data-section="lib-movies">
+      <h2>My Movies <span class="count" id="lib-movie-count"></span></h2>
+      <div id="lib-movies" class="cards"><p class="empty">Loading…</p></div>
+    </section>
+    <section data-section="lib-tv">
+      <h2>My Shows <span class="count" id="lib-tv-count"></span></h2>
+      <div id="lib-tv" class="cards"><p class="empty">Loading…</p></div>
+    </section>
+  </main>
+</div>
+<div id="player-overlay" hidden>
+  <div class="player-box">
+    <div class="player-head">
+      <span id="player-title"></span>
+      <button id="player-close" class="action small">Close</button>
+    </div>
+    <video id="player" controls playsinline preload="metadata"></video>
+  </div>
+</div>
 <footer>
   <button id="refresh">⟳ Refresh</button>
   <span id="updated"></span>
 </footer>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

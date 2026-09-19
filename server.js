@@ -180,6 +180,8 @@ app.post('/api/add', async (req, res) => {
         fetch(`${base}/api/v3/rootfolder`, { headers: H }).then(r => r.json()),
         fetch(`${base}/api/v3/series/lookup?term=tvdb:${id}`, { headers: H }).then(r => r.json()),
       ]);
+      const langProfiles = await fetch(`${base}/api/v3/languageprofile`, { headers: H }).then(r => r.json());
+      const english = (langProfiles || []).find(l => /english/i.test(l.name)) || langProfiles[0];
       const existing = await fetch(`${base}/api/v3/series`, { headers: H }).then(r => r.json());
       if ((existing || []).some(s => s.tvdbId === Number(id))) {
         return res.json({ ok: false, alreadyAdded: true, error: 'Already in your library' });
@@ -189,6 +191,7 @@ app.post('/api/add', async (req, res) => {
       const body = {
         tvdbId: item.tvdbId, title: item.title, titleSlug: item.titleSlug,
         qualityProfileId: profiles[0].id, rootFolderPath: folders[0].path,
+        languageProfileId: english.id,
         monitored: true, seasonFolder: true,
         monitorNewItems: 'all',
         seasons: (item.seasons || []).map(s => ({ seasonNumber: s.seasonNumber, monitored: true })),

@@ -200,6 +200,24 @@ app.get('/api/poster/:source/:id', async (req, res) => {
   }
 });
 
+// ---- Personal media library (browse + stream downloaded files, no Plex) ----
+const library = require('./library');
+
+app.get('/api/library', (req, res) => {
+  try {
+    if (req.query.fresh === '1') library.invalidate();
+    res.json(library.getLibrary(config));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Numeric ids only — never trust a raw path from the client.
+app.get('/api/stream/:id', (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.sendStatus(400);
+  library.streamHandler(req, res);
+});
+
 // ---- Search across Sonarr / Radarr ----
 function pickPoster(images) {
   const p = (images || []).find(i => i.coverType === 'poster');

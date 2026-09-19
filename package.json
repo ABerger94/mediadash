@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "description": "One-page dashboard for qBittorrent + Sonarr + Radarr download progress",
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "server.js",
+  "name": "mediadash",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "version": "1.0.0"
+}

@@ -27,7 +27,7 @@ body {
 /* Full-viewport background artwork (fixed layers so iOS Safari behaves) */
 body::before {
   content: ''; position: fixed; inset: 0; z-index: -1;
-  background: url("bg.webp?v=4") 68% 22% / cover no-repeat;
+  background: url("bg.webp?v=5") 68% 22% / cover no-repeat;
 }
 body::after {
   content: ''; position: fixed; inset: 0; z-index: -1;

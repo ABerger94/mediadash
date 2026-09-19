@@ -18,13 +18,22 @@
 html { scroll-behavior: smooth; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  background:
-    radial-gradient(1200px 500px at 50% -10%, rgba(79, 140, 255, .08), transparent 60%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   padding-bottom: 110px;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+/* Full-viewport background artwork (fixed layers so iOS Safari behaves) */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1;
+  background: url("bg.webp?v=4") 68% 22% / cover no-repeat;
+}
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: -1;
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(79, 140, 255, .08), transparent 60%),
+    linear-gradient(180deg, rgba(10, 14, 20, .62) 0%, rgba(10, 14, 20, .88) 100%);
 }
 main, .searchbar, #results, #errors {
   max-width: 640px; margin-left: auto; margin-right: auto;

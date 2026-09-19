@@ -32,17 +32,17 @@ http://192.168.1.5:3000
 
 Log in with the dashboard user/password from your config.
 
-## Run at startup (Windows)
+## Run at startup (Windows) — no more `npm start`
 
-To have it start with the laptop, create a `mediadash.bat` containing:
+Run this **once** from an elevated PowerShell inside the repo folder:
 
 ```
-@echo off
-cd /d C:\path\to\mediadash
-npm start
+powershell -ExecutionPolicy Bypass -File install-task.ps1
 ```
 
-Put it in the Startup folder (Win+R → `shell:startup`).
+This registers MediaDash as a Windows background task: it starts automatically at
+boot, restarts itself if it crashes, and runs with no console window. Verify it's
+running at http://localhost:3000. To remove it later: `Unregister-ScheduledTask -TaskName MediaDash`.
 
 ## Remote access via Vercel (check downloads away from home)
 

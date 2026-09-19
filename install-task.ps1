@@ -1,8 +1,8 @@
-# Installs MediaDash as a Windows background task. Run ONCE.
-# It then starts automatically at boot, restarts itself on crashes,
+# Installs MediaDash as a Windows background task. Run ONCE. No admin needed.
+# It then starts automatically at logon, restarts itself on crashes,
 # and runs with no console window. No more `npm start`.
 #
-# Run from an elevated PowerShell in this folder:
+# In a Terminal/PowerShell window inside this folder, run:
 #   powershell -ExecutionPolicy Bypass -File install-task.ps1
 
 $ErrorActionPreference = 'Stop'
@@ -20,23 +20,33 @@ if (-not (Test-Path (Join-Path $dir 'config.json'))) {
   exit 1
 }
 
+# Generate a launcher that starts node with no console window.
+$vbsPath = Join-Path $dir 'start-hidden.vbs'
+$vbs = @"
+Set sh = CreateObject("WScript.Shell")
+sh.CurrentDirectory = "$dir"
+sh.Run """$nodeExe"" server.js", 0, False
+"@
+Set-Content -Path $vbsPath -Value $vbs -Encoding ASCII
+
 $taskName = 'MediaDash'
-$action = New-ScheduledTaskAction -Execute $nodeExe -Argument 'server.js' -WorkingDirectory $dir
-$trigger = New-ScheduledTaskTrigger -AtStartup
-$principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
+$wscript = Join-Path $env:SystemRoot 'System32\wscript.exe'
+$action = New-ScheduledTaskAction -Execute $wscript -Argument "//B //Nologo ""$vbsPath""" -WorkingDirectory $dir
+$trigger = New-ScheduledTaskTrigger -AtLogOn
 $settings = New-ScheduledTaskSettingsSet `
   -StartWhenAvailable `
   -RestartCount 999 `
   -RestartInterval (New-TimeSpan -Minutes 1) `
-  -ExecutionTimeLimit 0
+  -ExecutionTimeLimit 0 `
+  -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
 Register-ScheduledTask -TaskName $taskName `
-  -Action $action -Trigger $trigger -Principal $principal -Settings $settings `
+  -Action $action -Trigger $trigger -Settings $settings `
   -Description 'MediaDash dashboard backend (qBittorrent/Sonarr/Radarr)' -Force | Out-Null
 
 Write-Host 'Task registered. Starting MediaDash now...'
 Start-ScheduledTask -TaskName $taskName
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 3
 $state = (Get-ScheduledTask -TaskName $taskName).State
 Write-Host "MediaDash task state: $state"
-Write-Host 'Done. It now starts on its own at boot — http://localhost:3000'
+Write-Host 'Done. It starts on its own at logon — http://localhost:3000'

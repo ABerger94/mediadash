@@ -34,9 +34,18 @@ async function qbLogin() {
     username: config.qbittorrent.username,
     password: config.qbittorrent.password,
   });
-  const res = await fetch(`${config.qbittorrent.url}/api/v2/auth/login`, { method: 'POST', body: params });
+  const res = await fetch(`${config.qbittorrent.url}/api/v2/auth/login`, {
+    method: 'POST',
+    body: params,
+    headers: {
+      // qBittorrent 4.5+ enables CSRF protection by default; it rejects
+      // API logins that don't carry matching Origin/Referer headers.
+      Origin: config.qbittorrent.url,
+      Referer: config.qbittorrent.url + '/',
+    },
+  });
   const text = await res.text();
-  if (text.trim() !== 'Ok.') throw new Error('qBittorrent login failed — check username/password in config.json');
+  if (text.trim() !== 'Ok.') throw new Error(`qBittorrent login failed (HTTP ${res.status}) — if credentials are correct, disable CSRF protection in qBittorrent's Web UI settings`);
   const setCookie = res.headers.get('set-cookie') || '';
   qbSid = setCookie.split(';')[0];
   if (!qbSid) throw new Error('qBittorrent did not return a session cookie');
@@ -46,7 +55,12 @@ async function qbFetch(apiPath, options = {}) {
   if (!qbSid) await qbLogin();
   const doFetch = () => fetch(config.qbittorrent.url + apiPath, {
     ...options,
-    headers: { ...(options.headers || {}), Cookie: qbSid },
+    headers: {
+      ...(options.headers || {}),
+      Cookie: qbSid,
+      Origin: config.qbittorrent.url,
+      Referer: config.qbittorrent.url + '/',
+    },
   });
   let res = await doFetch();
   if (res.status === 403) { // session expired — log in again once

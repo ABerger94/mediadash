@@ -34,7 +34,8 @@ Log in with the dashboard user/password from your config.
 
 ## Run at startup (Windows) — no more `npm start`
 
-Run this **once** from an elevated PowerShell inside the repo folder:
+Run this **once** from a Terminal/PowerShell window inside the repo folder
+(no administrator needed):
 
 ```
 powershell -ExecutionPolicy Bypass -File install-task.ps1

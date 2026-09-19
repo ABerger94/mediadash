@@ -190,6 +190,8 @@ app.post('/api/add', async (req, res) => {
         tvdbId: item.tvdbId, title: item.title, titleSlug: item.titleSlug,
         qualityProfileId: profiles[0].id, rootFolderPath: folders[0].path,
         monitored: true, seasonFolder: true,
+        monitorNewItems: 'all',
+        seasons: (item.seasons || []).map(s => ({ seasonNumber: s.seasonNumber, monitored: true })),
         seriesType: item.seriesType || 'standard',
         addOptions: { searchForMissingEpisodes: true },
       };

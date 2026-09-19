@@ -1,6 +1,6 @@
-# Installs MediaDash as a Windows background task. Run ONCE. No admin needed.
-# It then starts automatically at logon, restarts itself on crashes,
-# and runs with no console window. No more `npm start`.
+# Installs MediaDash to start automatically at logon. Run ONCE. No admin needed.
+# Uses the Windows Startup folder (Task Scheduler is blocked on this machine).
+# MediaDash then runs hidden in the background — no console window, no `npm start`.
 #
 # In a Terminal/PowerShell window inside this folder, run:
 #   powershell -ExecutionPolicy Bypass -File install-task.ps1
@@ -20,33 +20,37 @@ if (-not (Test-Path (Join-Path $dir 'config.json'))) {
   exit 1
 }
 
-# Generate a launcher that starts node with no console window.
+# Launcher: starts node with no console window, restarts it if it ever exits.
 $vbsPath = Join-Path $dir 'start-hidden.vbs'
 $vbs = @"
 Set sh = CreateObject("WScript.Shell")
 sh.CurrentDirectory = "$dir"
-sh.Run """$nodeExe"" server.js", 0, False
+Do
+  sh.Run """$nodeExe"" server.js", 0, True
+  WScript.Sleep 5000
+Loop
 "@
 Set-Content -Path $vbsPath -Value $vbs -Encoding ASCII
 
-$taskName = 'MediaDash'
+# Shortcut in the per-user Startup folder — launches at every logon.
+$startupDir = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Startup'
+$lnkPath = Join-Path $startupDir 'MediaDash.lnk'
 $wscript = Join-Path $env:SystemRoot 'System32\wscript.exe'
-$action = New-ScheduledTaskAction -Execute $wscript -Argument "//B //Nologo ""$vbsPath""" -WorkingDirectory $dir
-$trigger = New-ScheduledTaskTrigger -AtLogOn
-$settings = New-ScheduledTaskSettingsSet `
-  -StartWhenAvailable `
-  -RestartCount 999 `
-  -RestartInterval (New-TimeSpan -Minutes 1) `
-  -ExecutionTimeLimit 0 `
-  -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+$shell = New-Object -ComObject WScript.Shell
+$lnk = $shell.CreateShortcut($lnkPath)
+$lnk.TargetPath = $wscript
+$lnk.Arguments = "//B //Nologo ""$vbsPath"""
+$lnk.WorkingDirectory = $dir
+$lnk.Description = 'MediaDash dashboard backend'
+$lnk.Save()
+Write-Host 'Startup shortcut created.'
 
-Register-ScheduledTask -TaskName $taskName `
-  -Action $action -Trigger $trigger -Settings $settings `
-  -Description 'MediaDash dashboard backend (qBittorrent/Sonarr/Radarr)' -Force | Out-Null
-
-Write-Host 'Task registered. Starting MediaDash now...'
-Start-ScheduledTask -TaskName $taskName
+# Start it right now, too.
+Start-Process -FilePath $wscript -ArgumentList '//B', '//Nologo', "`"$vbsPath`"" -WorkingDirectory $dir
 Start-Sleep -Seconds 3
-$state = (Get-ScheduledTask -TaskName $taskName).State
-Write-Host "MediaDash task state: $state"
-Write-Host 'Done. It starts on its own at logon — http://localhost:3000'
+$procs = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+  Where-Object { $_.CommandLine -like '*server.js*' }
+if ($procs) { Write-Host 'MediaDash is running (hidden, no window).' }
+else { Write-Host 'Warning: node did not appear to start. Check config.json, then run the script again.' }
+Write-Host 'Done. It starts on its own at every logon — http://localhost:3000'
+Write-Host 'To remove later: Win+R -> shell:startup -> delete MediaDash.lnk'

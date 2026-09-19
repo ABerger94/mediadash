@@ -175,6 +175,8 @@ async function addItem(type, id, btn) {
     if (d.ok) {
       btn.textContent = '✓ Added';
       load();
+    } else if (d.alreadyAdded) {
+      btn.textContent = '✓ In library';
     } else {
       btn.disabled = false;
       btn.textContent = '+ Add';

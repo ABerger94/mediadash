@@ -180,6 +180,10 @@ app.post('/api/add', async (req, res) => {
         fetch(`${base}/api/v3/rootfolder`, { headers: H }).then(r => r.json()),
         fetch(`${base}/api/v3/series/lookup?term=tvdb:${id}`, { headers: H }).then(r => r.json()),
       ]);
+      const existing = await fetch(`${base}/api/v3/series`, { headers: H }).then(r => r.json());
+      if ((existing || []).some(s => s.tvdbId === Number(id))) {
+        return res.json({ ok: false, alreadyAdded: true, error: 'Already in your library' });
+      }
       const item = (lookup || []).find(s => s.tvdbId === Number(id)) || lookup[0];
       if (!item) throw new Error('Series not found');
       const body = {
@@ -200,6 +204,10 @@ app.post('/api/add', async (req, res) => {
       fetch(`${base}/api/v3/rootfolder`, { headers: H }).then(r => r.json()),
       fetch(`${base}/api/v3/movie/lookup?term=tmdb:${id}`, { headers: H }).then(r => r.json()),
     ]);
+    const existing = await fetch(`${base}/api/v3/movie`, { headers: H }).then(r => r.json());
+    if ((existing || []).some(m => m.tmdbId === Number(id))) {
+      return res.json({ ok: false, alreadyAdded: true, error: 'Already in your library' });
+    }
     const item = (lookup || []).find(m => m.tmdbId === Number(id)) || lookup[0];
     if (!item) throw new Error('Movie not found');
     const body = {

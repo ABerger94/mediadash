@@ -124,6 +124,20 @@ $('tab-movie').onclick = () => setTab('movie');
 load();
 setInterval(load, 5000);
 
+// ---- Collapsible sections (state persists across reloads) ----
+document.querySelectorAll('main section[data-section]').forEach(sec => {
+  const key = 'mediadash-collapsed-' + sec.dataset.section;
+  try {
+    if (localStorage.getItem(key) === '1') sec.classList.add('collapsed');
+    sec.querySelector('h2').addEventListener('click', () => {
+      sec.classList.toggle('collapsed');
+      localStorage.setItem(key, sec.classList.contains('collapsed') ? '1' : '0');
+    });
+  } catch (e) { /* private mode etc. — collapsing still works for the session */ 
+    sec.querySelector('h2').addEventListener('click', () => sec.classList.toggle('collapsed'));
+  }
+});
+
 // ---- Search + add ----
 let searchType = 'series';
 function setTab(t) {

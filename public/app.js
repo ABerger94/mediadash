@@ -121,39 +121,8 @@ $('go').onclick = doSearch;
 $('q').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 $('tab-series').onclick = () => setTab('series');
 $('tab-movie').onclick = () => setTab('movie');
-$('add-magnet').onclick = addMagnet;
-$('magnet').addEventListener('keydown', e => { if (e.key === 'Enter') addMagnet(); });
 load();
 setInterval(load, 5000);
-
-async function addMagnet() {
-  const input = $('magnet');
-  const urls = input.value.trim();
-  if (!urls) return;
-  const btn = $('add-magnet');
-  btn.disabled = true;
-  btn.textContent = 'Adding…';
-  try {
-    const res = await fetch('/api/torrents/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ urls }),
-    });
-    const d = await res.json();
-    if (d.ok) {
-      input.value = '';
-      btn.textContent = d.duplicate ? 'Already added' : '✓ Added';
-      setTimeout(() => { btn.textContent = '+ Add'; }, 2000);
-      load();
-    } else {
-      throw new Error(d.error);
-    }
-  } catch (e) {
-    alert('Add failed: ' + e.message);
-    btn.textContent = '+ Add';
-  }
-  btn.disabled = false;
-}
 
 // ---- Search + add ----
 let searchType = 'series';

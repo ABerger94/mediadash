@@ -1,0 +1,18 @@
+{
+  "dashboardPassword": "CHANGE-ME",
+  "dashboardUser": "alek",
+  "port": 3000,
+  "qbittorrent": {
+    "password": "YOUR-QBITTORRENT-PASSWORD",
+    "url": "http://localhost:8080",
+    "username": "aberger"
+  },
+  "radarr": {
+    "apiKey": "YOUR-RADARR-API-KEY",
+    "url": "http://localhost:7878"
+  },
+  "sonarr": {
+    "apiKey": "YOUR-SONARR-API-KEY",
+    "url": "http://localhost:8989"
+  }
+}

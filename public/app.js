@@ -26,9 +26,11 @@ function torrentCard(t) {
   const pct = (t.progress * 100).toFixed(1);
   const paused = ['pausedDL', 'pausedUP', 'stoppedDL', 'stoppedUP'].includes(t.state);
   const errored = ['error', 'missingFiles'].includes(t.state);
+  const done = ['uploading', 'stalledUP', 'seeding', 'queuedUP', 'stalledDL'].includes(t.state);
+  const stateCls = errored ? 'st-error' : paused ? 'st-paused' : done ? 'st-done' : 'st-active';
   const badgeCls = errored ? 'badge error' : (paused ? 'badge paused' : 'badge');
   const badgeTxt = errored ? 'error' : (paused ? 'paused' : t.state);
-  return `<div class="card">
+  return `<div class="card ${stateCls}">
     <div class="name">${esc(t.name)}<span class="${badgeCls}">${badgeTxt}</span></div>
     <div class="bar"><div style="width:${pct}%"></div></div>
     <div class="meta">
@@ -52,12 +54,18 @@ function queueCard(q, kind) {
   const size = q.size || 0, left = q.sizeleft || 0;
   const pct = size > 0 ? ((size - left) / size * 100).toFixed(1) : 0;
   const status = q.status || q.trackedDownloadStatus || '';
-  return `<div class="card">
-    <div class="name">${esc(title)}<span class="badge">${esc(status)}</span></div>
-    <div class="bar"><div style="width:${pct}%"></div></div>
-    <div class="meta">
-      <span>${pct}% · ${fmtBytes(size - left)} / ${fmtBytes(size)}</span>
-      <span>${q.timeleft ? 'ETA ' + q.timeleft : ''}</span>
+  const thumb = q.poster
+    ? `<img class="thumb" src="${esc(q.poster)}" alt="" loading="lazy" onerror="this.remove()">`
+    : '';
+  return `<div class="card queue">
+    ${thumb}
+    <div class="qbody">
+      <div class="name">${esc(title)}<span class="badge">${esc(status)}</span></div>
+      <div class="bar"><div style="width:${pct}%"></div></div>
+      <div class="meta">
+        <span>${pct}% · ${fmtBytes(size - left)} / ${fmtBytes(size)}</span>
+        <span>${q.timeleft ? 'ETA ' + q.timeleft : ''}</span>
+      </div>
     </div>
   </div>`;
 }
@@ -111,6 +119,7 @@ async function load() {
     }
 
     $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    document.body.classList.add('ready'); // stop card entrance animation on refreshes
   } catch (e) {
     $('errors').innerHTML = `<div class="err">Could not reach dashboard backend: ${esc(e.message)}</div>`;
   }

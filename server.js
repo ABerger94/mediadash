@@ -44,11 +44,16 @@ async function qbLogin() {
       Referer: config.qbittorrent.url + '/',
     },
   });
-  const text = await res.text();
-  if (text.trim() !== 'Ok.') throw new Error(`qBittorrent login failed (HTTP ${res.status}) — if credentials are correct, disable CSRF protection in qBittorrent's Web UI settings`);
+  const text = (await res.text()).trim();
+  // qBittorrent < 5.2: 200 + "Ok." body. qBittorrent 5.2+: 204 No Content with an
+  // empty body (the "Ok." string is gone). Bad credentials return 401.
+  if (res.status !== 204 && text !== 'Ok.') {
+    throw new Error(`qBittorrent login failed (HTTP ${res.status}) — check username/password in config.json`);
+  }
   const setCookie = res.headers.get('set-cookie') || '';
-  qbSid = setCookie.split(';')[0];
-  if (!qbSid) throw new Error('qBittorrent did not return a session cookie');
+  qbSid = setCookie.split(';')[0].trim();
+  // No cookie + 204 means auth is bypassed for the localhost subnet — requests
+  // work fine without a session cookie.
 }
 
 async function qbFetch(apiPath, options = {}) {
@@ -57,7 +62,7 @@ async function qbFetch(apiPath, options = {}) {
     ...options,
     headers: {
       ...(options.headers || {}),
-      Cookie: qbSid,
+      ...(qbSid ? { Cookie: qbSid } : {}),
       Origin: config.qbittorrent.url,
       Referer: config.qbittorrent.url + '/',
     },

@@ -121,15 +121,20 @@ app.get('/api/status', async (req, res) => {
 });
 
 // ---- Torrent pause / resume ----
+// qBittorrent 5.x renamed pause/resume to stop/start; fall back to legacy names on 4.x.
 app.post('/api/torrents/:hash/:action', async (req, res) => {
   const { hash, action } = req.params;
   if (!['pause', 'resume'].includes(action)) return res.status(400).json({ error: 'bad action' });
+  const modern = action === 'pause' ? 'stop' : 'start';
+  const legacy = action === 'pause' ? 'pause' : 'resume';
+  const call = (ep) => qbFetch(`/api/v2/torrents/${ep}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ hashes: hash }),
+  });
   try {
-    const r = await qbFetch(`/api/v2/torrents/${action}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ hashes: hash }),
-    });
+    let r = await call(modern);
+    if (r.status === 404) r = await call(legacy);
     res.json({ ok: r.ok });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });

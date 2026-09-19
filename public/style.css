@@ -29,12 +29,6 @@ body::before {
   content: ''; position: fixed; inset: 0; z-index: -1;
   background: url("bg.webp?v=7") 30% 22% / cover no-repeat;
 }
-/* Portrait phones get a vertically-composed background instead of a cropped slice */
-@media (max-width: 768px) and (orientation: portrait) {
-  body::before {
-    background: url("bg-portrait.webp?v=1") 50% 18% / cover no-repeat;
-  }
-}
 body::after {
   content: ''; position: fixed; inset: 0; z-index: -1;
   background:

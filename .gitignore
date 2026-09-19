@@ -2,3 +2,5 @@ config.json
 node_modules/
 start-hidden.vbs
 cloudflared.exe
+tracker/config.local.json
+tracker/tracker.log

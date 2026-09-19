@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MediaDash</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">🥛 MediaDash</div>
+  <div class="speeds"><span id="dl">–</span> ↓ <span id="up">–</span> ↑</div>
+</header>
+<div id="errors"></div>
+<div class="searchbar">
+  <div class="toggle">
+    <button id="tab-series" class="on">TV</button>
+    <button id="tab-movie">Movies</button>
+  </div>
+  <div class="searchrow">
+    <input id="q" type="search" placeholder="Search shows or movies…" autocomplete="off">
+    <button id="go">Search</button>
+  </div>
+</div>
+<div id="results" class="cards"></div>
+<main>
+  <section>
+    <h2>Downloads <span class="count" id="qb-count"></span></h2>
+    <div id="torrents" class="cards"><p class="empty">Loading…</p></div>
+  </section>
+  <section>
+    <h2>Sonarr <span class="count" id="sonarr-count"></span></h2>
+    <div id="sonarr" class="cards"><p class="empty">Loading…</p></div>
+  </section>
+  <section>
+    <h2>Radarr <span class="count" id="radarr-count"></span></h2>
+    <div id="radarr" class="cards"><p class="empty">Loading…</p></div>
+  </section>
+</main>
+<footer>
+  <button id="refresh">⟳ Refresh</button>
+  <span id="updated"></span>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

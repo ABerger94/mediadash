@@ -267,7 +267,7 @@ function libFileRow(f) {
     </div>
     <div class="lib-actions">
       <button class="action small" onclick="convertAndPlay(${f.id})">Convert &amp; Play</button>
-      <button class="action small" onclick="convertAndPlay(${f.id},'phone')">Phone version</button>
+      <button class="action small phone-only" onclick="convertAndPlay(${f.id},'phone')">Phone version</button>
       <a class="action small dlink" href="/api/stream/${f.id}?download=1">Download</a>
     </div>
   </div>`;

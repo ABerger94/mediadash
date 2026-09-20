@@ -310,3 +310,8 @@ a.dlink { text-decoration: none; }
   flex: 1; min-width: 0;
 }
 #player { width: 100%; max-height: 70vh; border-radius: 12px; background: #000; }
+
+/* Phone version button: show on touch/mobile devices only */
+@media (hover: hover) and (pointer: fine) {
+  .phone-only { display: none; }
+}

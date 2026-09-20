@@ -101,13 +101,44 @@ How it works:
 
 - MP4 / M4V / MOV files get a **Play** button — they stream in the browser
   with full seeking (HTTP Range support) and play natively in Safari.
-- Anything else (MKV, AVI, WEBM, …) shows a **"won't play in Safari"** note
-  with a **Download** link instead — save it to your phone and open it in a
-  player app like VLC or Infuse. No transcoding yet (see below).
-- Every library and stream route sits behind the same dashboard password.
+- Anything else (MKV, AVI, WEBM, …) gets a **Convert & Play** button: the
+  server converts it to MP4 on the fly with ffmpeg, shows a progress bar,
+  then plays it in the browser. A **Download** link for the original file
+  stays next to it.
+- Every library, convert, and stream route sits behind the same dashboard password.
 
-Future ideas (not in this pass): on-the-fly transcoding to MP4 for MKV files,
-posters/artwork for library items, watched-state tracking.
+### Transcoding (MKV → MP4 for Safari)
+
+Conversion is remux-first: if the video is already h264/hevc and the audio
+is AAC/MP3/AC-3/E-AC-3, the streams are copied straight into an MP4
+container — fast (usually 1–2 min for a full movie), zero quality loss, low
+CPU. Otherwise video is re-encoded to h264 (crf 20, veryfast) and/or audio
+to AAC. Subtitles are dropped.
+
+Converted files are cached in `transcodeDir` (default `./transcode-cache`,
+gitignored), keyed on the source file's size + modification time — replaying
+the same file skips conversion entirely. Only one conversion runs at a time.
+
+ffmpeg setup (no admin needed on Windows):
+
+1. Download a portable build from https://www.gyan.dev/ffmpeg/builds/
+   (the `ffmpeg-release-essentials.zip`), unzip it anywhere.
+2. Add to `config.json`:
+```json
+"ffmpegPath": "C:/ffmpeg/bin/ffmpeg.exe",
+"ffprobePath": "C:/ffmpeg/bin/ffprobe.exe"
+```
+Leave them empty to use whatever is on PATH instead.
+
+If ffmpeg can't be found, Convert & Play shows the setup instructions
+instead of failing silently.
+
+Limitations: conversion jobs live in memory — restarting the server drops
+in-progress jobs (finished conversions stay cached, so just hit Play
+again). Very large re-encodes take a while; remuxes are quick.
+
+Future ideas (not in this pass): posters/artwork for library items,
+watched-state tracking.
 
 ## Notes
 

@@ -218,6 +218,41 @@ app.get('/api/stream/:id', (req, res) => {
   library.streamHandler(req, res);
 });
 
+// ---- On-the-fly MKV -> MP4 conversion (so Safari can play anything) ----
+const transcode = require('./transcode');
+
+// Start (or reuse) a conversion job for a non-native file.
+app.post('/api/convert/:id', async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'bad id' });
+  library.getLibrary(config); // make sure the scan has run at least once
+  const f = library.getFile(req.params.id);
+  if (!f) return res.status(404).json({ error: 'not found' });
+  if (f.playable) return res.status(400).json({ error: 'already plays natively' });
+  if (!transcode.toolsAvailable(config)) {
+    return res.status(503).json({ error: 'no-ffmpeg', message: transcode.NO_FFMPEG_MSG });
+  }
+  try {
+    const job = await transcode.startJob(config, f);
+    res.json(transcode.jobPublic(job));
+  } catch (e) {
+    res.status(500).json({ error: String((e && e.message) || e).slice(0, 300) });
+  }
+});
+
+// Poll conversion progress: { jobId, state: queued|converting|done|error, percent, error }
+app.get('/api/convert/:jobId/status', (req, res) => {
+  const job = transcode.getJob(req.params.jobId);
+  if (!job) return res.status(404).json({ error: 'unknown job' });
+  res.json(transcode.jobPublic(job));
+});
+
+// Stream a finished conversion with the same Range support as library files.
+app.get('/api/stream-converted/:jobId', (req, res) => {
+  const job = transcode.getJob(req.params.jobId);
+  if (!job || job.state !== 'done') return res.sendStatus(404);
+  library.streamPath(req, res, job.outPath, transcode.outNameFor(job.title), 'video/mp4', false);
+});
+
 // ---- Search across Sonarr / Radarr ----
 function pickPoster(images) {
   const p = (images || []).find(i => i.coverType === 'poster');

@@ -267,6 +267,7 @@ function libFileRow(f) {
     </div>
     <div class="lib-actions">
       <button class="action small" onclick="convertAndPlay(${f.id})">Convert &amp; Play</button>
+      <button class="action small" onclick="convertAndPlay(${f.id},'phone')">Phone version</button>
       <a class="action small dlink" href="/api/stream/${f.id}?download=1">Download</a>
     </div>
   </div>`;
@@ -334,11 +335,13 @@ $('player-close').onclick = closePlayer;
 $('player-overlay').addEventListener('click', e => { if (e.target.id === 'player-overlay') closePlayer(); });
 
 // ---- Convert & Play: MKV (etc.) -> MP4 on the server, then play in Safari ----
+// quality: 'full' (default, big file) or 'phone' (720p, small file for slow connections)
 let convTimer = null;
-function convertAndPlay(id) {
-  const title = libTitles[id] || 'Converting';
-  showConverting(title, 0, 'Starting…');
-  fetch('/api/convert/' + id, { method: 'POST' })
+function convertAndPlay(id, quality) {
+  quality = quality === 'phone' ? 'phone' : 'full';
+  const title = (libTitles[id] || 'Converting') + (quality === 'phone' ? ' (phone)' : '');
+  showConverting(title, 0, quality === 'phone' ? 'Starting phone version…' : 'Starting…');
+  fetch('/api/convert/' + id + '?quality=' + quality, { method: 'POST' })
     .then(async res => {
       const d = await res.json().catch(() => ({}));
       if (res.status === 503 && d.error === 'no-ffmpeg') {

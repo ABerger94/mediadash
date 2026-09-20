@@ -48,10 +48,10 @@ function transcodeDir(config) {
   return d;
 }
 
-function cacheKey(absPath) {
+function cacheKey(absPath, quality) {
   const st = fs.statSync(absPath);
   return crypto.createHash('sha1')
-    .update('v4|' + absPath + '|' + st.mtimeMs + '|' + st.size)
+    .update('v5|' + quality + '|' + absPath + '|' + st.mtimeMs + '|' + st.size)
     .digest('hex');
 }
 
@@ -79,7 +79,7 @@ function durationMs(info) {
 }
 
 // Returns ffmpeg args with INPUT/OUTPUT placeholders filled by the caller.
-function buildArgs(info, src, out) {
+function buildArgs(info, src, out, quality) {
   const streams = (info && info.streams) || [];
   const v = streams.find(s => s.codec_type === 'video');
   const a = streams.find(s => s.codec_type === 'audio');
@@ -93,10 +93,16 @@ function buildArgs(info, src, out) {
   // that's silent in browsers but plays fine in native players.
   if (v && v.index != null) args.push('-map', '0:' + v.index);
   if (a && a.index != null) args.push('-map', '0:' + a.index);
-  if (v && NATIVE_VIDEO.has(vCodec)) args.push('-c:v', 'copy');
+  if (quality === 'phone') {
+    // Small file for slow connections (Tailscale away from home):
+    // max 720p H.264 + stereo AAC, roughly 3-4 Mbps.
+    args.push('-vf', 'scale=-2:min(720,ih)', '-c:v', 'libx264',
+              '-crf', '23', '-preset', 'veryfast');
+  } else if (v && NATIVE_VIDEO.has(vCodec)) args.push('-c:v', 'copy');
   else args.push('-c:v', 'libx264', '-crf', '20', '-preset', 'veryfast');
   if (a) {
-    if (NATIVE_AUDIO.has(aCodec)) args.push('-c:a', 'copy');
+    if (quality === 'phone') args.push('-c:a', 'aac', '-b:a', '128k', '-ac', '2');
+    else if (NATIVE_AUDIO.has(aCodec)) args.push('-c:a', 'copy');
     else args.push('-c:a', 'aac', '-b:a', '160k');
   }
   // Drop subtitles: simple, and avoids players choking on embedded subs.
@@ -110,25 +116,28 @@ const queue = [];
 let activeId = null;
 
 function jobPublic(j) {
-  return { jobId: j.id, state: j.state, percent: j.percent, error: j.error, title: j.title };
+  return { jobId: j.id, state: j.state, percent: j.percent, error: j.error, title: j.title, quality: j.quality };
 }
 
-function outNameFor(title) {
-  return String(title).replace(/\.[^.]+$/, '') + '.mp4';
+function outNameFor(title, quality) {
+  const base = String(title).replace(/\.[^.]+$/, '');
+  return base + (quality === 'phone' ? ' (phone)' : '') + '.mp4';
 }
 
-async function startJob(config, file) {
-  // file: library record ({ id, name, _path })
+async function startJob(config, file, quality) {
+  // file: library record ({ id, name, _path }); quality: 'full' | 'phone'
+  quality = quality === 'phone' ? 'phone' : 'full';
   for (const j of jobs.values()) {
-    if (j.fileId !== file.id) continue;
+    if (j.fileId !== file.id || j.quality !== quality) continue;
     if (j.state === 'done' && !fs.existsSync(j.outPath)) { jobs.delete(j.id); continue; }
     if (j.state === 'queued' || j.state === 'converting' || j.state === 'done') return j;
   }
   const dir = transcodeDir(config);
-  const outPath = path.join(dir, cacheKey(file._path) + '.mp4');
+  const outPath = path.join(dir, cacheKey(file._path, quality) + '.mp4');
   const job = {
     id: crypto.randomBytes(8).toString('hex'),
     fileId: file.id,
+    quality,
     title: file.name,
     srcPath: file._path,
     outPath,
@@ -181,11 +190,11 @@ function runJob(config, job) {
       info = await probe(config, job.srcPath);
     } catch (e) { return reject(e); }
     const total = durationMs(info);
-    const args = buildArgs(info, job.srcPath, job.outPath);
+    const args = buildArgs(info, job.srcPath, job.outPath, job.quality);
     const trackList = ((info && info.streams) || [])
       .map(s => `${s.codec_type}:${s.codec_name}${s.channels ? '/' + s.channels + 'ch' : ''}`)
       .join(', ');
-    console.log(`[transcode] "${job.title}" tracks=[${trackList}]`);
+    console.log(`[transcode] "${job.title}" [${job.quality}] tracks=[${trackList}]`);
     const bin = ffmpegBin(config);
     const p = spawn(bin, args, { windowsHide: true });
     let errTail = '';

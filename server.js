@@ -232,7 +232,8 @@ app.post('/api/convert/:id', async (req, res) => {
     return res.status(503).json({ error: 'no-ffmpeg', message: transcode.NO_FFMPEG_MSG });
   }
   try {
-    const job = await transcode.startJob(config, f);
+    const quality = req.query.quality === 'phone' ? 'phone' : 'full';
+    const job = await transcode.startJob(config, f, quality);
     res.json(transcode.jobPublic(job));
   } catch (e) {
     res.status(500).json({ error: String((e && e.message) || e).slice(0, 300) });
@@ -250,7 +251,7 @@ app.get('/api/convert/:jobId/status', (req, res) => {
 app.get('/api/stream-converted/:jobId', (req, res) => {
   const job = transcode.getJob(req.params.jobId);
   if (!job || job.state !== 'done') return res.sendStatus(404);
-  library.streamPath(req, res, job.outPath, transcode.outNameFor(job.title), 'video/mp4', false);
+  library.streamPath(req, res, job.outPath, transcode.outNameFor(job.title, job.quality), 'video/mp4', false);
 });
 
 // ---- Search across Sonarr / Radarr ----

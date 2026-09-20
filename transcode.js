@@ -51,7 +51,7 @@ function transcodeDir(config) {
 function cacheKey(absPath) {
   const st = fs.statSync(absPath);
   return crypto.createHash('sha1')
-    .update('v3|' + absPath + '|' + st.mtimeMs + '|' + st.size)
+    .update('v4|' + absPath + '|' + st.mtimeMs + '|' + st.size)
     .digest('hex');
 }
 
@@ -87,6 +87,12 @@ function buildArgs(info, src, out) {
   const aCodec = String(a && a.codec_name || '').toLowerCase();
 
   const args = ['-y', '-progress', 'pipe:1', '-nostats', '-i', src];
+  // Map the exact streams we probed. Without this, ffmpeg's default stream
+  // selection can pick a different audio track than the one we inspected
+  // (e.g. a 5.1 DTS track instead of the stereo AAC one), producing an MP4
+  // that's silent in browsers but plays fine in native players.
+  if (v && v.index != null) args.push('-map', '0:' + v.index);
+  if (a && a.index != null) args.push('-map', '0:' + a.index);
   if (v && NATIVE_VIDEO.has(vCodec)) args.push('-c:v', 'copy');
   else args.push('-c:v', 'libx264', '-crf', '20', '-preset', 'veryfast');
   if (a) {
@@ -176,6 +182,10 @@ function runJob(config, job) {
     } catch (e) { return reject(e); }
     const total = durationMs(info);
     const args = buildArgs(info, job.srcPath, job.outPath);
+    const trackList = ((info && info.streams) || [])
+      .map(s => `${s.codec_type}:${s.codec_name}${s.channels ? '/' + s.channels + 'ch' : ''}`)
+      .join(', ');
+    console.log(`[transcode] "${job.title}" tracks=[${trackList}]`);
     const bin = ffmpegBin(config);
     const p = spawn(bin, args, { windowsHide: true });
     let errTail = '';

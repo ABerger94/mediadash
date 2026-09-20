@@ -357,6 +357,15 @@ app.post('/api/add', async (req, res) => {
 });
 
 const PORT = config.port || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`MediaDash running at http://localhost:${PORT}`);
+});
+server.on('error', (e) => {
+  if (e && e.code === 'EADDRINUSE') {
+    console.error(`\nPort ${PORT} is already in use — an old MediaDash is still running.`);
+    console.error(`Run: taskkill /F /IM node.exe`);
+    console.error(`Then: npm start\n`);
+    process.exit(1);
+  }
+  throw e;
 });

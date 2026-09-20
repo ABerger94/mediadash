@@ -109,6 +109,16 @@ async function load() {
       $('up').textContent = fmtSpeed(transfer.up_info_speed);
       const active = torrents.filter(t => !['uploading', 'stalledUP', 'seeding'].includes(t.state));
       const list = active.length ? active : torrents;
+      // Sort: downloads that are actually moving first (fastest on top),
+      // then stalled/incomplete ones, then finished/seeding ones last.
+      const doneStates = ['uploading', 'stalledUP', 'seeding', 'forcedUP', 'pausedUP', 'queuedUP', 'checkingUP'];
+      const dlRank = t => {
+        const done = (t.progress >= 1) || doneStates.includes(t.state);
+        if (!done && (t.dlspeed || 0) > 0) return 0;
+        if (!done) return 1;
+        return 2;
+      };
+      list.sort((a, b) => (dlRank(a) - dlRank(b)) || ((b.dlspeed || 0) - (a.dlspeed || 0)));
       $('qb-count').textContent = `(${torrents.length})`;
       $('torrents').innerHTML = list.length
         ? list.map(torrentCard).join('')

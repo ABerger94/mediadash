@@ -1,6 +1,6 @@
 // MediaDash on-the-fly conversion: MKV (and friends) -> MP4 for iPhone Safari.
 //
-// Remux-first: when the video codec is already h264/hevc and the audio is a
+// Remux-first: when the video codec is already h264 and the audio is a
 // format Safari understands, we just copy both streams into an MP4 container
 // (fast, zero quality loss, low CPU). Otherwise we re-encode video to h264
 // and/or audio to AAC. Output lands in a cache dir keyed on the source
@@ -18,8 +18,12 @@ const NO_FFMPEG_MSG =
   'ffmpeg not found \u2014 download a portable build (e.g. gyan.dev), unzip it, ' +
   'and set ffmpegPath/ffprobePath in config.json (no admin needed)';
 
-// Video codecs Safari plays inside an MP4 container.
-const NATIVE_VIDEO = new Set(['h264', 'hevc', 'avc']);
+// Video codecs Safari plays inside an MP4 container via the <video> element.
+// HEVC is NOT on this list on purpose: iOS Safari plays HEVC in the native
+// player and in HLS, but an HEVC stream inside a plain MP4 served to the
+// <video> tag gives audio with a black screen. So HEVC sources are
+// re-encoded to H.264 instead of copied.
+const NATIVE_VIDEO = new Set(['h264', 'avc']);
 // Audio codecs browsers actually play inside an MP4 container. AC-3/E-AC-3
 // decode fine in native players (VLC, Movies & TV) but are SILENT in every
 // browser, so we re-encode those to AAC instead of copying.
@@ -51,7 +55,7 @@ function transcodeDir(config) {
 function cacheKey(absPath, quality) {
   const st = fs.statSync(absPath);
   return crypto.createHash('sha1')
-    .update('v5|' + quality + '|' + absPath + '|' + st.mtimeMs + '|' + st.size)
+    .update('v6|' + quality + '|' + absPath + '|' + st.mtimeMs + '|' + st.size)
     .digest('hex');
 }
 
@@ -102,7 +106,14 @@ function buildArgs(info, src, out, quality) {
     args.push('-vf', "scale=-2:'min(720,ih)'", '-c:v', 'libx264',
               '-crf', '23', '-preset', 'veryfast');
   } else if (v && NATIVE_VIDEO.has(vCodec)) args.push('-c:v', 'copy');
-  else args.push('-c:v', 'libx264', '-crf', '20', '-preset', 'veryfast');
+  else {
+    // Re-encode anything Safari can't play (HEVC, VP9, AV1, ...) to H.264.
+    // If the source is taller than 1080p, downscale — the converted file is
+    // for phone playback and 4K just burns laptop CPU for no visible gain.
+    const h = Number(v && v.height);
+    if (Number.isFinite(h) && h > 1080) args.push('-vf', 'scale=-2:1080');
+    args.push('-c:v', 'libx264', '-crf', '20', '-preset', 'veryfast');
+  }
   if (a) {
     if (quality === 'phone') args.push('-c:a', 'aac', '-b:a', '128k', '-ac', '2');
     else if (NATIVE_AUDIO.has(aCodec)) args.push('-c:a', 'copy');

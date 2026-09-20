@@ -263,9 +263,12 @@ function libFileRow(f) {
   return `<div class="lib-row">
     <div class="lib-info">
       <div class="lib-name">${esc(f.label ? f.label + ' — ' + f.name : f.name)}</div>
-      <div class="lib-meta">${meta} · <span class="noplay">won't play in Safari</span></div>
+      <div class="lib-meta">${meta} · converts to MP4 for Safari</div>
     </div>
-    <a class="action small dlink" href="/api/stream/${f.id}?download=1">Download</a>
+    <div class="lib-actions">
+      <button class="action small" onclick="convertAndPlay(${f.id})">Convert &amp; Play</button>
+      <a class="action small dlink" href="/api/stream/${f.id}?download=1">Download</a>
+    </div>
   </div>`;
 }
 
@@ -318,11 +321,72 @@ function playFile(id) {
   v.play().catch(() => {});
 }
 function closePlayer() {
+  clearInterval(convTimer);
   const v = $('player');
   v.pause();
   v.removeAttribute('src');
   v.load();
+  $('player-converting').hidden = true;
+  v.style.display = '';
   $('player-overlay').hidden = true;
 }
 $('player-close').onclick = closePlayer;
 $('player-overlay').addEventListener('click', e => { if (e.target.id === 'player-overlay') closePlayer(); });
+
+// ---- Convert & Play: MKV (etc.) -> MP4 on the server, then play in Safari ----
+let convTimer = null;
+function convertAndPlay(id) {
+  const title = libTitles[id] || 'Converting';
+  showConverting(title, 0, 'Starting…');
+  fetch('/api/convert/' + id, { method: 'POST' })
+    .then(async res => {
+      const d = await res.json().catch(() => ({}));
+      if (res.status === 503 && d.error === 'no-ffmpeg') {
+        showConverting(title, 0, d.message || 'ffmpeg not found');
+        return;
+      }
+      if (!res.ok || !d.jobId) throw new Error(d.error || 'convert failed to start');
+      pollConvert(d.jobId, title);
+    })
+    .catch(e => showConverting(title, 0, 'Error: ' + e.message));
+}
+function pollConvert(jobId, title) {
+  clearInterval(convTimer);
+  convTimer = setInterval(async () => {
+    try {
+      const res = await fetch('/api/convert/' + jobId + '/status');
+      const d = await res.json();
+      if (d.state === 'done') {
+        clearInterval(convTimer);
+        hideConverting();
+        const v = $('player');
+        v.src = '/api/stream-converted/' + jobId;
+        $('player-title').textContent = title;
+        $('player-overlay').hidden = false;
+        v.play().catch(() => {});
+      } else if (d.state === 'error') {
+        clearInterval(convTimer);
+        showConverting(title, d.percent || 0, 'Error: ' + (d.error || 'conversion failed'));
+      } else {
+        showConverting(title, d.percent || 0,
+          d.state === 'queued' ? 'Waiting — another conversion is running…' : 'Converting… ' + (d.percent || 0) + '%');
+      }
+    } catch (e) {
+      clearInterval(convTimer);
+      showConverting(title, 0, 'Error: ' + e.message);
+    }
+  }, 1000);
+}
+function showConverting(title, percent, msg) {
+  $('player-overlay').hidden = false;
+  $('player').style.display = 'none';
+  $('player-converting').hidden = false;
+  $('player-title').textContent = title;
+  $('conv-fill').style.width = Math.min(100, Math.max(0, percent)) + '%';
+  $('conv-msg').textContent = msg;
+}
+function hideConverting() {
+  clearInterval(convTimer);
+  $('player-converting').hidden = true;
+  $('player').style.display = '';
+}

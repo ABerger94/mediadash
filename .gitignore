@@ -1,5 +1,6 @@
 config.json
 node_modules/
+transcode-cache/
 start-hidden.vbs
 cloudflared.exe
 tracker/config.local.json

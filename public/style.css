@@ -273,7 +273,6 @@ body.ready main .card { animation: none; }
 .lib-info { flex: 1; min-width: 0; }
 .lib-name { font-size: .88rem; font-weight: 600; word-break: break-word; line-height: 1.35; }
 .lib-meta { font-size: .76rem; color: var(--muted); margin-top: 3px; }
-.noplay { color: #ffb3b3; font-weight: 600; }
 .season-group { margin-top: 10px; }
 .season-group:first-of-type { margin-top: 2px; }
 .season-label {
@@ -283,7 +282,15 @@ body.ready main .card { animation: none; }
 .lib-show-head { cursor: pointer; user-select: none; -webkit-user-select: none; }
 .lib-show .lib-eps { overflow: hidden; }
 .lib-show.collapsed .lib-eps { display: none; }
+.lib-actions { display: flex; gap: 8px; flex-shrink: 0; }
 a.dlink { text-decoration: none; }
+
+/* Convert & Play progress */
+#player-converting { padding: 14px 2px; }
+#player-converting[hidden] { display: none; }
+.conv-bar { height: 10px; border-radius: 6px; background: var(--accent-soft); overflow: hidden; }
+.conv-fill { height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, #3b7dff, #2f6df6); transition: width .4s ease; }
+.conv-msg { font-size: .8rem; color: var(--muted); margin-top: 10px; line-height: 1.45; word-break: break-word; }
 
 /* In-browser player overlay */
 #player-overlay {

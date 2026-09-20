@@ -3,7 +3,8 @@
 // Show > Season > Episode and movies as a flat list, and streams files
 // over HTTP with Range support so seeking works in the browser.
 //
-// Transcoding is deliberately NOT done here (see README "Future ideas").
+// MKV (and other non-Safari containers) are converted to MP4 on demand by
+// transcode.js; this module just streams files, whatever their source.
 
 const fs = require('fs');
 const path = require('path');
@@ -184,15 +185,20 @@ function invalidate() { cache = null; }
 function streamHandler(req, res) {
   const f = getFile(req.params.id);
   if (!f) return res.sendStatus(404);
+  streamPath(req, res, f._path, f.name, f.mime, req.query.download === '1');
+}
+
+// Shared Range-request streamer for any file on disk (library files and
+// converted MP4s alike). name/mime describe what the client sees.
+function streamPath(req, res, absPath, name, mime, download) {
   let stat;
-  try { stat = fs.statSync(f._path); } catch (e) { return res.sendStatus(404); }
+  try { stat = fs.statSync(absPath); } catch (e) { return res.sendStatus(404); }
   const total = stat.size;
 
-  const download = req.query.download === '1';
   res.set('Accept-Ranges', 'bytes');
-  res.set('Content-Type', f.mime);
+  res.set('Content-Type', mime);
   res.set('Content-Disposition',
-    (download ? 'attachment' : 'inline') + `; filename="${encodeURIComponent(f.name)}"`);
+    (download ? 'attachment' : 'inline') + `; filename="${encodeURIComponent(name)}"`);
 
   const range = req.headers.range;
   if (range) {
@@ -210,11 +216,11 @@ function streamHandler(req, res) {
     res.status(206);
     res.set('Content-Range', `bytes ${start}-${end}/${total}`);
     res.set('Content-Length', String(end - start + 1));
-    fs.createReadStream(f._path, { start, end }).pipe(res);
+    fs.createReadStream(absPath, { start, end }).pipe(res);
   } else {
     res.set('Content-Length', String(total));
-    fs.createReadStream(f._path).pipe(res);
+    fs.createReadStream(absPath).pipe(res);
   }
 }
 
-module.exports = { getLibrary, getFile, invalidate, streamHandler, normalizeMediaDirs };
+module.exports = { getLibrary, getFile, invalidate, streamHandler, streamPath, normalizeMediaDirs };

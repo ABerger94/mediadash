@@ -15,5 +15,8 @@
     "apiKey": "YOUR-SONARR-API-KEY",
     "url": "http://localhost:8989"
   },
-  "mediaDirs": ["E:/media/tv"]
+  "mediaDirs": ["E:/media/tv"],
+  "ffmpegPath": "",
+  "ffprobePath": "",
+  "transcodeDir": ""
 }

@@ -96,7 +96,10 @@ function buildArgs(info, src, out, quality) {
   if (quality === 'phone') {
     // Small file for slow connections (Tailscale away from home):
     // max 720p H.264 + stereo AAC, roughly 3-4 Mbps.
-    args.push('-vf', 'scale=-2:min(720,ih)', '-c:v', 'libx264',
+    // NOTE: the min() expression must be single-quoted — ffmpeg's
+    // filtergraph parser splits on commas, so an unquoted min(720,ih)
+    // gets misread as two filters ("No such filter: 'ih)'").
+    args.push('-vf', "scale=-2:'min(720,ih)'", '-c:v', 'libx264',
               '-crf', '23', '-preset', 'veryfast');
   } else if (v && NATIVE_VIDEO.has(vCodec)) args.push('-c:v', 'copy');
   else args.push('-c:v', 'libx264', '-crf', '20', '-preset', 'veryfast');

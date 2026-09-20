@@ -20,8 +20,10 @@ const NO_FFMPEG_MSG =
 
 // Video codecs Safari plays inside an MP4 container.
 const NATIVE_VIDEO = new Set(['h264', 'hevc', 'avc']);
-// Audio codecs safe to copy into MP4 for Safari.
-const NATIVE_AUDIO = new Set(['aac', 'mp3', 'ac3', 'eac3']);
+// Audio codecs browsers actually play inside an MP4 container. AC-3/E-AC-3
+// decode fine in native players (VLC, Movies & TV) but are SILENT in every
+// browser, so we re-encode those to AAC instead of copying.
+const NATIVE_AUDIO = new Set(['aac', 'mp3']);
 
 function resolveTool(config, key, fallbackName) {
   const candidates = [];
@@ -49,7 +51,7 @@ function transcodeDir(config) {
 function cacheKey(absPath) {
   const st = fs.statSync(absPath);
   return crypto.createHash('sha1')
-    .update(absPath + '|' + st.mtimeMs + '|' + st.size)
+    .update('v3|' + absPath + '|' + st.mtimeMs + '|' + st.size)
     .digest('hex');
 }
 

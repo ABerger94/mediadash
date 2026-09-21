@@ -251,7 +251,7 @@ app.get('/api/convert/:jobId/status', (req, res) => {
 app.get('/api/stream-converted/:jobId', (req, res) => {
   const job = transcode.getJob(req.params.jobId);
   if (!job || job.state !== 'done') return res.sendStatus(404);
-  library.streamPath(req, res, job.outPath, transcode.outNameFor(job.title, job.quality), 'video/mp4', false);
+  library.streamPath(req, res, job.outPath, transcode.outNameFor(job.title, job.quality), 'video/mp4', req.query.download === '1');
 });
 
 // ---- Search across Sonarr / Radarr ----

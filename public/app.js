@@ -267,7 +267,10 @@ function libFileRow(f) {
         <div class="lib-name">${esc(f.label ? f.label + ' — ' + f.name : f.name)}</div>
         <div class="lib-meta">${meta}</div>
       </div>
-      <button class="action small" onclick="playFile(${f.id})">Play</button>
+      <div class="lib-actions">
+        <button class="action small" onclick="playFile(${f.id})">Play</button>
+        <a class="action small dlink" href="/api/stream/${f.id}?download=1">Download</a>
+      </div>
     </div>`;
   }
   return `<div class="lib-row">

@@ -16,5 +16,5 @@ echo  Starting tunnel... look for the https://....trycloudflare.com URL below.
 echo  Open that URL on your phone to reach MediaDash from anywhere.
 echo  The URL changes if you restart this, so just run it again and grab the new one.
 echo.
-cloudflared.exe tunnel --url http://localhost:3000
+cloudflared.exe tunnel --url http://localhost:3001
 pause

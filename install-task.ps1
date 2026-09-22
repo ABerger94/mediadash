@@ -52,5 +52,5 @@ $procs = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
   Where-Object { $_.CommandLine -like '*server.js*' }
 if ($procs) { Write-Host 'MediaDash is running (hidden, no window).' }
 else { Write-Host 'Warning: node did not appear to start. Check config.json, then run the script again.' }
-Write-Host 'Done. It starts on its own at every logon — http://localhost:3000'
+Write-Host 'Done. It starts on its own at every logon — http://localhost:3001'
 Write-Host 'To remove later: Win+R -> shell:startup -> delete MediaDash.lnk'

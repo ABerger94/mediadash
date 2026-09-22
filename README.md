@@ -20,14 +20,14 @@ One phone-friendly dashboard for your whole download stack: **qBittorrent** prog
    ```
    npm start
    ```
-5. Open http://localhost:3000 on the laptop.
+5. Open http://localhost:3001 on the laptop.
 
 ## On your phone (same WiFi)
 
 Find the laptop's IP (`ipconfig` → IPv4 Address, e.g. `192.168.1.5`), then open:
 
 ```
-http://192.168.1.5:3000
+http://192.168.1.5:3001
 ```
 
 Log in with the dashboard user/password from your config.
@@ -43,7 +43,7 @@ powershell -ExecutionPolicy Bypass -File install-task.ps1
 
 This registers MediaDash as a Windows background task: it starts automatically at
 boot, restarts itself if it crashes, and runs with no console window. Verify it's
-running at http://localhost:3000. To remove it later: Win+R → `shell:startup` →
+running at http://localhost:3001. To remove it later: Win+R → `shell:startup` →
 delete `MediaDash.lnk`.
 
 ## Remote access via Vercel (check downloads away from home)
@@ -58,9 +58,9 @@ frontend and proxies `/api/*` to your laptop through a secure Cloudflare Tunnel.
    cloudflared tunnel login
    cloudflared tunnel create mediadash
    cloudflared tunnel route dns mediadash mediadash.example.com
-   cloudflared tunnel run --url http://localhost:3000 mediadash
+   cloudflared tunnel run --url http://localhost:3001 mediadash
    ```
-   (Or for a quick test: `cloudflared tunnel --url http://localhost:3000` — but that
+   (Or for a quick test: `cloudflared tunnel --url http://localhost:3001` — but that
    URL changes every restart, so you'd have to update `vercel.json` each time.)
 3. In `vercel.json`, replace `YOUR-TUNNEL-URL-HERE` with your tunnel hostname
    (e.g. `mediadash.example.com`), commit, and push.
@@ -72,7 +72,7 @@ Notes:
 - The laptop must stay on with `npm start` running, or the Vercel copy shows errors.
 - The tunnel URL is public — the dashboard password gate still protects it, but don't
   share the link.
-- Local WiFi access (`http://<laptop-ip>:3000`) keeps working exactly as before.
+- Local WiFi access (`http://<laptop-ip>:3001`) keeps working exactly as before.
 
 ## Library tab — browse and watch your downloads, no Plex needed
 

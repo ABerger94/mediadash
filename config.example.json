@@ -1,7 +1,7 @@
 {
   "dashboardPassword": "CHANGE-ME",
   "dashboardUser": "alek",
-  "port": 3000,
+  "port": 3001,
   "qbittorrent": {
     "password": "YOUR-QBITTORRENT-PASSWORD",
     "url": "http://localhost:8080",
